@@ -1,0 +1,2084 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="dr-guilherme-apolinario" content="Busca de Procedimentos SUS/SIGTAP">
+    <title>Busca de Procedimentos SUS/SIGTAP</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            width: 100vw;
+            height: 100vh;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .search-container {
+            margin: 30px 0;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .result {
+            border-bottom: 1px solid #eee;
+            padding: 10px;
+            margin-bottom: 5px;
+            background-color: white;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .result:hover {
+            background-color: #f0f7ff;
+        }
+        .codigo {
+            font-weight: bold;
+            margin-right: 10px;
+            color: #3498db;
+        }
+        .count {
+            margin-bottom: 15px;
+            color: #7f8c8d;
+        }
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 0 2px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            background-color: #f1f1f1;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: white;
+            font-weight: bold;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+        .copy-button {
+            background-color: #e7e7e7;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .copy-button:hover {
+            background-color: #d7d7d7;
+        }
+    </style>
+</head>
+<body>
+  
+  <div class="w-3/5 p-4 bg-white rounded-xl shadow-md flex flex-col items-center justify-center mx-auto">
+    <div class="flex flex-col items-center justify-center mx-auto">
+      <h1 class="text-2xl p-4 mt-4 rounded-xl bg-gray-200 shadow-md font-bold">Busca de Procedimentos SUS/SIGTAP</h1>
+    </div>
+
+    <br>
+    
+    <div class= "w-4/6 flex flex-col items-center justify-center mx-auto">
+      <div class=" w-[460px] flex flex-row items-center justify-center mx-auto">
+        
+          <div class="tab active" id="tab-nome">
+            <i class="fas fa-search"></i>             
+            Por Nome</div>
+          <div class="tab" id="tab-codigo">
+            <i class="fas fa-copy"></i>
+            Por Código</div>
+      </div>
+    </div>
+    
+    <div class="flex flex-col items-center justify-center mx-auto">
+      <div class="search-container">
+          <input type="text" id="search" class="w-[420px] p-2 rounded-md shadow-md border border-gray-300" placeholder="Digite para buscar procedimentos (mínimo 3 caracteres)..." autocomplete="off">
+      </div>
+    </div>
+
+    
+    <div class="count" id="count"></div>
+    <div id="results">
+        <div class="loading"></div>
+    </div>
+  </div>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        // Carregar os dados do JSON
+        let procedimentos = [
+        {
+          "codigo": "202090019",
+          "nome": "ACIDO URICO LIQUIDO NO SINOVIAL E DERRAMES"
+        },
+        {
+          "codigo": "202090027",
+          "nome": "ADENOGRAMA"
+        },
+        {
+          "codigo": "202050017",
+          "nome": "ANALISE DE CARACTERES FISICOS, ELEMENTOS E SEDIMENTO DA URINA"
+        },
+        {
+          "codigo": "202080013",
+          "nome": "ANTIBIOGRAMA"
+        },
+        {
+          "codigo": "202080021",
+          "nome": "ANTIBIOGRAMA C/ CONCENTRACAO INIBITORIA MINIMA"
+        },
+        {
+          "codigo": "202080030",
+          "nome": "ANTIBIOGRAMA P/ MICOBACTERIAS"
+        },
+        {
+          "codigo": "202080056",
+          "nome": "BACILOSCOPIA DIRETA P/ BAAR (HANSENIASE)"
+        },
+        {
+          "codigo": "202080064",
+          "nome": "BACILOSCOPIA DIRETA P/ BAAR TUBERCULOS (CONTROLE)"
+        },
+        {
+          "codigo": "202080048",
+          "nome": "BACILOSCOPIA DIRETA P/ BAAR TUBERCULOSE (DIAGNÓSTICA)"
+        },
+        {
+          "codigo": "202080072",
+          "nome": "BACTEROSCOPIA (GRAM)"
+        },
+        {
+          "codigo": "202090035",
+          "nome": "CITOLOGIA P/ CLAMIDIA"
+        },
+        {
+          "codigo": "202090043",
+          "nome": "CITOLOGIA P/ HERPESVIRUS"
+        },
+        {
+          "codigo": "202020010",
+          "nome": "CITOQUIMICA HEMATOLOGICA"
+        },
+        {
+          "codigo": "202050025",
+          "nome": "CLEARANCE DE CREATININA"
+        },
+        {
+          "codigo": "202050033",
+          "nome": "CLEARANCE DE FOSFATO"
+        },
+        {
+          "codigo": "202050041",
+          "nome": "CLEARANCE DE UREIA"
+        },
+        {
+          "codigo": "202010015",
+          "nome": "CLEARANCE OSMOLAR"
+        },
+        {
+          "codigo": "202050050",
+          "nome": "CONTAGEM DE ADDIS"
+        },
+        {
+          "codigo": "202030016",
+          "nome": "CONTAGEM DE LINFOCITOS B"
+        },
+        {
+          "codigo": "202030024",
+          "nome": "CONTAGEM DE LINFOCITOS CD4/CD8"
+        },
+        {
+          "codigo": "202030032",
+          "nome": "CONTAGEM DE LINFOCITOS T TOTAIS"
+        },
+        {
+          "codigo": "202020029",
+          "nome": "CONTAGEM DE PLAQUETAS"
+        },
+        {
+          "codigo": "202020037",
+          "nome": "CONTAGEM DE RETICULOCITOS"
+        },
+        {
+          "codigo": "202090051",
+          "nome": "CONTAGEM ESPECIFICA DE CELULAS NO LIQUOR"
+        },
+        {
+          "codigo": "202090060",
+          "nome": "CONTAGEM GLOBAL DE CELULAS NO LIQUOR"
+        },
+        {
+          "codigo": "202080080",
+          "nome": "CULTURA DE BACTERIAS P/ IDENTIFICACAO"
+        },
+        {
+          "codigo": "202080099",
+          "nome": "CULTURA DO LEITE MATERNO (POS-PASTEURIZACAO)"
+        },
+        {
+          "codigo": "202080102",
+          "nome": "CULTURA P/ HERPESVIRUS"
+        },
+        {
+          "codigo": "202080110",
+          "nome": "CULTURA PARA BAAR"
+        },
+        {
+          "codigo": "202080129",
+          "nome": "CULTURA PARA BACTERIAS ANAEROBICAS"
+        },
+        {
+          "codigo": "202080137",
+          "nome": "CULTURA PARA IDENTIFICACAO DE FUNGOS"
+        },
+        {
+          "codigo": "202030040",
+          "nome": "DETECCAO DE RNA DO HIV-1 (QUALITATIVO)"
+        },
+        {
+          "codigo": "202030059",
+          "nome": "DETECCAO DE RNA DO VIRUS DA HEPATITE C (QUALITATIVO)"
+        },
+        {
+          "codigo": "202110010",
+          "nome": "DETECCAO DE VARIANTES DA HEMOGLOBINA (DIAGNOSTICO TARDIO)"
+        },
+        {
+          "codigo": "202110133",
+          "nome": "DETECÇÃO MOLECULAR DE MUTAÇÃO EM DEFICIÊNCIA DE BIOTINIDASE"
+        },
+        {
+          "codigo": "202110028",
+          "nome": "DETECCAO MOLECULAR DE MUTACAO EM HEMOGLOBINOPATIAS (CONFIRMATORIO)"
+        },
+        {
+          "codigo": "202110125",
+          "nome": "DETECÇÃO MOLECULAR DE MUTAÇÃO EM HIPERPLASIA ADRENAL CONGÊNITA"
+        },
+        {
+          "codigo": "202110036",
+          "nome": "DETECCAO MOLECULAR EM FIBROSE CISTICA (CONFIRMATORIO)"
+        },
+        {
+          "codigo": "202120015",
+          "nome": "DETERMINACAO DE ANTICORPOS ANTIPLAQUETARIOS"
+        },
+        {
+          "codigo": "202010023",
+          "nome": "DETERMINACAO DE CAPACIDADE DE FIXACAO DO FERRO"
+        },
+        {
+          "codigo": "202100014",
+          "nome": "DETERMINACAO DE CARIOTIPO EM CULTURA DE LONGA DURACAO (C/ TECNICA DE BANDAS)"
+        },
+        {
+          "codigo": "202100022",
+          "nome": "DETERMINACAO DE CARIOTIPO EM MEDULA OSSEA E VILOSIDADES CORIONICAS (C/ TECNICA DE BANDAS)"
+        },
+        {
+          "codigo": "202100030",
+          "nome": "DETERMINACAO DE CARIOTIPO EM SANGUE PERIFERICO (C/ TECNICA DE BANDAS)"
+        },
+        {
+          "codigo": "202030067",
+          "nome": "DETERMINACAO DE COMPLEMENTO (CH50)"
+        },
+        {
+          "codigo": "202010031",
+          "nome": "DETERMINACAO DE CROMATOGRAFIA DE AMINOACIDOS"
+        },
+        {
+          "codigo": "202020045",
+          "nome": "DETERMINACAO DE CURVA DE RESISTENCIA GLOBULAR"
+        },
+        {
+          "codigo": "202010040",
+          "nome": "DETERMINACAO DE CURVA GLICEMICA (2 DOSAGENS)"
+        },
+        {
+          "codigo": "202010058",
+          "nome": "DETERMINACAO DE CURVA GLICEMICA C/ INDUCAO POR CORTISONA ( 5 DOSAGENS)"
+        },
+        {
+          "codigo": "202010066",
+          "nome": "DETERMINACAO DE CURVA GLICEMICA C/ INDUCAO POR CORTISONA (4 DOSAGENS)"
+        },
+        {
+          "codigo": "202010074",
+          "nome": "DETERMINACAO DE CURVA GLICEMICA CLASSICA (5 DOSAGENS)"
+        },
+        {
+          "codigo": "202020053",
+          "nome": "DETERMINACAO DE ENZIMAS ERITROCITARIAS (CADA)"
+        },
+        {
+          "codigo": "202030075",
+          "nome": "DETERMINACAO DE FATOR REUMATOIDE"
+        },
+        {
+          "codigo": "202090078",
+          "nome": "DETERMINACAO DE FOSFOLIPIDIOS RELACAO LECITINA - ESFINGOMIELINA NO LIQUIDO AMNIOTICO"
+        },
+        {
+          "codigo": "202060012",
+          "nome": "DETERMINACAO DE INDICE DE TIROXINA LIVRE"
+        },
+        {
+          "codigo": "202050068",
+          "nome": "DETERMINACAO DE OSMOLALIDADE"
+        },
+        {
+          "codigo": "202010082",
+          "nome": "DETERMINACAO DE OSMOLARIDADE"
+        },
+        {
+          "codigo": "202060020",
+          "nome": "DETERMINACAO DE RETENCAO DE T3"
+        },
+        {
+          "codigo": "202020061",
+          "nome": "DETERMINACAO DE SULFO-HEMOGLOBINA"
+        },
+        {
+          "codigo": "202060039",
+          "nome": "DETERMINACAO DE T3 REVERSO"
+        },
+        {
+          "codigo": "202020070",
+          "nome": "DETERMINACAO DE TEMPO DE COAGULACAO"
+        },
+        {
+          "codigo": "202020088",
+          "nome": "DETERMINACAO DE TEMPO DE LISE DA EUGLOBULINA"
+        },
+        {
+          "codigo": "202020100",
+          "nome": "DETERMINACAO DE TEMPO DE SANGRAMENTO DE IVY"
+        },
+        {
+          "codigo": "202020096",
+          "nome": "DETERMINACAO DE TEMPO DE SANGRAMENTO -DUKE"
+        },
+        {
+          "codigo": "202020118",
+          "nome": "DETERMINACAO DE TEMPO DE SOBREVIDA DE HEMACIAS"
+        },
+        {
+          "codigo": "202020126",
+          "nome": "DETERMINACAO DE TEMPO DE TROMBINA"
+        },
+        {
+          "codigo": "202020134",
+          "nome": "DETERMINACAO DE TEMPO DE TROMBOPLASTINA PARCIAL ATIVADA (TTP ATIVADA)"
+        },
+        {
+          "codigo": "202020142",
+          "nome": "DETERMINACAO DE TEMPO E ATIVIDADE DA PROTROMBINA (TAP)"
+        },
+        {
+          "codigo": "202020150",
+          "nome": "DETERMINACAO DE VELOCIDADE DE HEMOSSEDIMENTACAO (VHS)"
+        },
+        {
+          "codigo": "202120023",
+          "nome": "DETERMINACAO DIRETA E REVERSA DE GRUPO ABO"
+        },
+        {
+          "codigo": "202030083",
+          "nome": "DETERMINACAO QUANTITATIVA DE PROTEINA C REATIVA"
+        },
+        {
+          "codigo": "202110109",
+          "nome": "DOSAGEM DA ATIVIDADE DA BIOTINIDASE EM AMOSTRAS DE SANGUE EM PAPEL DE FILTRO"
+        },
+        {
+          "codigo": "202031195",
+          "nome": "DOSAGEM DA FRAÇÃO C1Q DO COMPLEMENTO"
+        },
+        {
+          "codigo": "202110095",
+          "nome": "DOSAGEM DE 17 HIDROXI PROGESTERONA EM PAPEL DE FILTRO"
+        },
+        {
+          "codigo": "202060047",
+          "nome": "DOSAGEM DE 17-ALFA-HIDROXIPROGESTERONA"
+        },
+        {
+          "codigo": "202060055",
+          "nome": "DOSAGEM DE 17-CETOSTEROIDES TOTAIS"
+        },
+        {
+          "codigo": "202060063",
+          "nome": "DOSAGEM DE 17-HIDROXICORTICOSTEROIDES"
+        },
+        {
+          "codigo": "202010767",
+          "nome": "DOSAGEM DE 25 HIDROXIVITAMINA D"
+        },
+        {
+          "codigo": "202010090",
+          "nome": "DOSAGEM DE 5-NUCLEOTIDASE"
+        },
+        {
+          "codigo": "202010104",
+          "nome": "DOSAGEM DE ACETONA"
+        },
+        {
+          "codigo": "202060071",
+          "nome": "DOSAGEM DE ACIDO 5-HIDROXI-INDOL-ACETICO (SEROTONINA)"
+        },
+        {
+          "codigo": "202010112",
+          "nome": "DOSAGEM DE ACIDO ASCORBICO"
+        },
+        {
+          "codigo": "202070018",
+          "nome": "DOSAGEM DE ACIDO DELTA-AMINOLEVULINICO"
+        },
+        {
+          "codigo": "202070026",
+          "nome": "DOSAGEM DE ACIDO HIPURICO"
+        },
+        {
+          "codigo": "202070034",
+          "nome": "DOSAGEM DE ACIDO MANDELICO"
+        },
+        {
+          "codigo": "202070042",
+          "nome": "DOSAGEM DE ACIDO METIL-HIPURICO"
+        },
+        {
+          "codigo": "202010120",
+          "nome": "DOSAGEM DE ACIDO URICO"
+        },
+        {
+          "codigo": "202070050",
+          "nome": "DOSAGEM DE ACIDO VALPROICO"
+        },
+        {
+          "codigo": "202010139",
+          "nome": "DOSAGEM DE ACIDO VANILMANDELICO"
+        },
+        {
+          "codigo": "202050076",
+          "nome": "DOSAGEM DE ACUCARES (POR CROMATOGRAFIA)"
+        },
+        {
+          "codigo": "202060080",
+          "nome": "DOSAGEM DE ADRENOCORTICOTROFICO (ACTH)"
+        },
+        {
+          "codigo": "202070069",
+          "nome": "DOSAGEM DE ALA-DESIDRATASE"
+        },
+        {
+          "codigo": "202070077",
+          "nome": "DOSAGEM DE ALCOOL ETILICO"
+        },
+        {
+          "codigo": "202010147",
+          "nome": "DOSAGEM DE ALDOLASE"
+        },
+        {
+          "codigo": "202060098",
+          "nome": "DOSAGEM DE ALDOSTERONA"
+        },
+        {
+          "codigo": "202010155",
+          "nome": "DOSAGEM DE ALFA-1-ANTITRIPSINA"
+        },
+        {
+          "codigo": "202010163",
+          "nome": "DOSAGEM DE ALFA-1-GLICOPROTEINA ACIDA"
+        },
+        {
+          "codigo": "202010171",
+          "nome": "DOSAGEM DE ALFA-2-MACROGLOBULINA"
+        },
+        {
+          "codigo": "202030091",
+          "nome": "DOSAGEM DE ALFA-FETOPROTEINA"
+        },
+        {
+          "codigo": "202070085",
+          "nome": "DOSAGEM DE ALUMINIO"
+        },
+        {
+          "codigo": "202010180",
+          "nome": "DOSAGEM DE AMILASE"
+        },
+        {
+          "codigo": "202070093",
+          "nome": "DOSAGEM DE AMINOGLICOSIDEOS"
+        },
+        {
+          "codigo": "202010198",
+          "nome": "DOSAGEM DE AMONIA"
+        },
+        {
+          "codigo": "202060101",
+          "nome": "DOSAGEM DE AMP CICLICO"
+        },
+        {
+          "codigo": "202060110",
+          "nome": "DOSAGEM DE ANDROSTENEDIONA"
+        },
+        {
+          "codigo": "202070107",
+          "nome": "DOSAGEM DE ANFETAMINAS"
+        },
+        {
+          "codigo": "202020169",
+          "nome": "DOSAGEM DE ANTICOAGULANTE CIRCULANTE"
+        },
+        {
+          "codigo": "202031187",
+          "nome": "DOSAGEM DE ANTICORPOS ANTITRANSGLUTAMINAISE RECOMBINANTE HUMANO IGA"
+        },
+        {
+          "codigo": "202070115",
+          "nome": "DOSAGEM DE ANTIDEPRESSIVOS TRICICLICOS"
+        },
+        {
+          "codigo": "202030105",
+          "nome": "DOSAGEM DE ANTIGENO PROSTATICO ESPECIFICO (PSA)"
+        },
+        {
+          "codigo": "202020177",
+          "nome": "DOSAGEM DE ANTITROMBINA III"
+        },
+        {
+          "codigo": "202070123",
+          "nome": "DOSAGEM DE BARBITURATOS"
+        },
+        {
+          "codigo": "202070131",
+          "nome": "DOSAGEM DE BENZODIAZEPINICOS"
+        },
+        {
+          "codigo": "202030113",
+          "nome": "DOSAGEM DE BETA-2-MICROGLOBULINA"
+        },
+        {
+          "codigo": "202010201",
+          "nome": "DOSAGEM DE BILIRRUBINA TOTAL E FRACOES"
+        },
+        {
+          "codigo": "202070140",
+          "nome": "DOSAGEM DE CADMIO"
+        },
+        {
+          "codigo": "202010210",
+          "nome": "DOSAGEM DE CALCIO"
+        },
+        {
+          "codigo": "202010228",
+          "nome": "DOSAGEM DE CALCIO IONIZAVEL"
+        },
+        {
+          "codigo": "202060128",
+          "nome": "DOSAGEM DE CALCITONINA"
+        },
+        {
+          "codigo": "202070158",
+          "nome": "DOSAGEM DE CARBAMAZEPINA"
+        },
+        {
+          "codigo": "202070166",
+          "nome": "DOSAGEM DE CARBOXI-HEMOGLOBINA"
+        },
+        {
+          "codigo": "202010236",
+          "nome": "DOSAGEM DE CAROTENO"
+        },
+        {
+          "codigo": "202010244",
+          "nome": "DOSAGEM DE CATECOLAMINAS"
+        },
+        {
+          "codigo": "202010252",
+          "nome": "DOSAGEM DE CERULOPLASMINA"
+        },
+        {
+          "codigo": "202070174",
+          "nome": "DOSAGEM DE CHUMBO"
+        },
+        {
+          "codigo": "202070182",
+          "nome": "DOSAGEM DE CICLOSPORINA"
+        },
+        {
+          "codigo": "202050084",
+          "nome": "DOSAGEM DE CITRATO"
+        },
+        {
+          "codigo": "202010260",
+          "nome": "DOSAGEM DE CLORETO"
+        },
+        {
+          "codigo": "202110141",
+          "nome": "DOSAGEM DE CLORETO NO SUOR"
+        },
+        {
+          "codigo": "202070190",
+          "nome": "DOSAGEM DE COBRE"
+        },
+        {
+          "codigo": "202010279",
+          "nome": "DOSAGEM DE COLESTEROL HDL"
+        },
+        {
+          "codigo": "202010287",
+          "nome": "DOSAGEM DE COLESTEROL LDL"
+        },
+        {
+          "codigo": "202010295",
+          "nome": "DOSAGEM DE COLESTEROL TOTAL"
+        },
+        {
+          "codigo": "202010309",
+          "nome": "DOSAGEM DE COLINESTERASE"
+        },
+        {
+          "codigo": "202030121",
+          "nome": "DOSAGEM DE COMPLEMENTO C3"
+        },
+        {
+          "codigo": "202030130",
+          "nome": "DOSAGEM DE COMPLEMENTO C4"
+        },
+        {
+          "codigo": "202060136",
+          "nome": "DOSAGEM DE CORTISOL"
+        },
+        {
+          "codigo": "202010317",
+          "nome": "DOSAGEM DE CREATININA"
+        },
+        {
+          "codigo": "202090086",
+          "nome": "DOSAGEM DE CREATININA NO LIQUIDO AMNIOTICO"
+        },
+        {
+          "codigo": "202010325",
+          "nome": "DOSAGEM DE CREATINOFOSFOQUINASE (CPK)"
+        },
+        {
+          "codigo": "202010333",
+          "nome": "DOSAGEM DE CREATINOFOSFOQUINASE FRACAO MB"
+        },
+        {
+          "codigo": "202030148",
+          "nome": "DOSAGEM DE CRIOAGLUTININA"
+        },
+        {
+          "codigo": "202060144",
+          "nome": "DOSAGEM DE DEHIDROEPIANDROSTERONA (DHEA)"
+        },
+        {
+          "codigo": "202010341",
+          "nome": "DOSAGEM DE DESIDROGENASE ALFA-HIDROXIBUTIRICA"
+        },
+        {
+          "codigo": "202010350",
+          "nome": "DOSAGEM DE DESIDROGENASE GLUTAMICA"
+        },
+        {
+          "codigo": "202010368",
+          "nome": "DOSAGEM DE DESIDROGENASE LATICA"
+        },
+        {
+          "codigo": "202010376",
+          "nome": "DOSAGEM DE DESIDROGENASE LATICA (ISOENZIMAS FRACIONADAS)"
+        },
+        {
+          "codigo": "202070204",
+          "nome": "DOSAGEM DE DIGITALICOS (DIGOXINA, DIGITOXINA)"
+        },
+        {
+          "codigo": "202060152",
+          "nome": "DOSAGEM DE DIHIDROTESTOTERONA (DHT)"
+        },
+        {
+          "codigo": "202040011",
+          "nome": "DOSAGEM DE ESTERCOBILINOGENIO FECAL"
+        },
+        {
+          "codigo": "202060160",
+          "nome": "DOSAGEM DE ESTRADIOL"
+        },
+        {
+          "codigo": "202060179",
+          "nome": "DOSAGEM DE ESTRIOL"
+        },
+        {
+          "codigo": "202060187",
+          "nome": "DOSAGEM DE ESTRONA"
+        },
+        {
+          "codigo": "202070212",
+          "nome": "DOSAGEM DE ETOSSUXIMIDA"
+        },
+        {
+          "codigo": "202020185",
+          "nome": "DOSAGEM DE FATOR II"
+        },
+        {
+          "codigo": "202020193",
+          "nome": "DOSAGEM DE FATOR IX"
+        },
+        {
+          "codigo": "202020207",
+          "nome": "DOSAGEM DE FATOR V"
+        },
+        {
+          "codigo": "202020215",
+          "nome": "DOSAGEM DE FATOR VII"
+        },
+        {
+          "codigo": "202020223",
+          "nome": "DOSAGEM DE FATOR VIII"
+        },
+        {
+          "codigo": "202020231",
+          "nome": "DOSAGEM DE FATOR VIII (INIBIDOR)"
+        },
+        {
+          "codigo": "202020240",
+          "nome": "DOSAGEM DE FATOR VON WILLEBRAND (ANTIGENO)"
+        },
+        {
+          "codigo": "202020258",
+          "nome": "DOSAGEM DE FATOR X"
+        },
+        {
+          "codigo": "202020266",
+          "nome": "DOSAGEM DE FATOR XI"
+        },
+        {
+          "codigo": "202020274",
+          "nome": "DOSAGEM DE FATOR XII"
+        },
+        {
+          "codigo": "202020282",
+          "nome": "DOSAGEM DE FATOR XIII"
+        },
+        {
+          "codigo": "202110044",
+          "nome": "DOSAGEM DE FENILALANINA (CONTROLE / DIAGNOSTICO TARDIO)"
+        },
+        {
+          "codigo": "202110052",
+          "nome": "DOSAGEM DE FENILALANINA E TSH OU T4"
+        },
+        {
+          "codigo": "202110060",
+          "nome": "DOSAGEM DE FENILALANINA TSH OU T4 E DETECCAO DA VARIANTE DE HEMOGLOBINA"
+        },
+        {
+          "codigo": "202070220",
+          "nome": "DOSAGEM DE FENITOINA"
+        },
+        {
+          "codigo": "202070239",
+          "nome": "DOSAGEM DE FENOL"
+        },
+        {
+          "codigo": "202010384",
+          "nome": "DOSAGEM DE FERRITINA"
+        },
+        {
+          "codigo": "202010392",
+          "nome": "DOSAGEM DE FERRO SERICO"
+        },
+        {
+          "codigo": "202020290",
+          "nome": "DOSAGEM DE FIBRINOGENIO"
+        },
+        {
+          "codigo": "202010406",
+          "nome": "DOSAGEM DE FOLATO"
+        },
+        {
+          "codigo": "202070247",
+          "nome": "DOSAGEM DE FORMALDEIDO"
+        },
+        {
+          "codigo": "202090221",
+          "nome": "DOSAGEM DE FOSFATASE ÁCIDA NO ESPERMA"
+        },
+        {
+          "codigo": "202010414",
+          "nome": "DOSAGEM DE FOSFATASE ACIDA TOTAL"
+        },
+        {
+          "codigo": "202010422",
+          "nome": "DOSAGEM DE FOSFATASE ALCALINA"
+        },
+        {
+          "codigo": "202090094",
+          "nome": "DOSAGEM DE FOSFATASE ALCALINA NO ESPERMA"
+        },
+        {
+          "codigo": "202010430",
+          "nome": "DOSAGEM DE FOSFORO"
+        },
+        {
+          "codigo": "202010449",
+          "nome": "DOSAGEM DE FRACAO PROSTATICA DA FOSFATASE ACIDA"
+        },
+        {
+          "codigo": "202090108",
+          "nome": "DOSAGEM DE FRUTOSE"
+        },
+        {
+          "codigo": "202090116",
+          "nome": "DOSAGEM DE FRUTOSE NO ESPERMA"
+        },
+        {
+          "codigo": "202010457",
+          "nome": "DOSAGEM DE GALACTOSE"
+        },
+        {
+          "codigo": "202010465",
+          "nome": "DOSAGEM DE GAMA-GLUTAMIL-TRANSFERASE (GAMA GT)"
+        },
+        {
+          "codigo": "202060195",
+          "nome": "DOSAGEM DE GASTRINA"
+        },
+        {
+          "codigo": "202010473",
+          "nome": "DOSAGEM DE GLICOSE"
+        },
+        {
+          "codigo": "202090124",
+          "nome": "DOSAGEM DE GLICOSE NO LIQUIDO SINOVIAL E DERRAMES"
+        },
+        {
+          "codigo": "202010481",
+          "nome": "DOSAGEM DE GLICOSE-6-FOSFATO DESIDROGENASE"
+        },
+        {
+          "codigo": "202060209",
+          "nome": "DOSAGEM DE GLOBULINA TRANSPORTADORA DE TIROXINA"
+        },
+        {
+          "codigo": "202060217",
+          "nome": "DOSAGEM DE GONADOTROFINA CORIONICA HUMANA (HCG, BETA HCG)"
+        },
+        {
+          "codigo": "202040020",
+          "nome": "DOSAGEM DE GORDURA FECAL"
+        },
+        {
+          "codigo": "202010490",
+          "nome": "DOSAGEM DE HAPTOGLOBINA"
+        },
+        {
+          "codigo": "202020304",
+          "nome": "DOSAGEM DE HEMOGLOBINA"
+        },
+        {
+          "codigo": "202020312",
+          "nome": "DOSAGEM DE HEMOGLOBINA - INSTABILIDADE A 37OC"
+        },
+        {
+          "codigo": "202020320",
+          "nome": "DOSAGEM DE HEMOGLOBINA FETAL"
+        },
+        {
+          "codigo": "202010503",
+          "nome": "DOSAGEM DE HEMOGLOBINA GLICOSILADA"
+        },
+        {
+          "codigo": "202020339",
+          "nome": "DOSAGEM DE HEMOSSIDERINA"
+        },
+        {
+          "codigo": "202010511",
+          "nome": "DOSAGEM DE HIDROXIPROLINA"
+        },
+        {
+          "codigo": "202060225",
+          "nome": "DOSAGEM DE HORMONIO DE CRESCIMENTO (HGH)"
+        },
+        {
+          "codigo": "202060233",
+          "nome": "DOSAGEM DE HORMONIO FOLICULO-ESTIMULANTE (FSH)"
+        },
+        {
+          "codigo": "202060241",
+          "nome": "DOSAGEM DE HORMONIO LUTEINIZANTE (LH)"
+        },
+        {
+          "codigo": "202060250",
+          "nome": "DOSAGEM DE HORMONIO TIREOESTIMULANTE (TSH)"
+        },
+        {
+          "codigo": "202030156",
+          "nome": "DOSAGEM DE IMUNOGLOBULINA A (IGA)"
+        },
+        {
+          "codigo": "202030164",
+          "nome": "DOSAGEM DE IMUNOGLOBULINA E (IGE)"
+        },
+        {
+          "codigo": "202030172",
+          "nome": "DOSAGEM DE IMUNOGLOBULINA G (IGG)"
+        },
+        {
+          "codigo": "202030180",
+          "nome": "DOSAGEM DE IMUNOGLOBULINA M (IGM)"
+        },
+        {
+          "codigo": "202030199",
+          "nome": "DOSAGEM DE INIBIDOR DE C1-ESTERASE"
+        },
+        {
+          "codigo": "202060268",
+          "nome": "DOSAGEM DE INSULINA"
+        },
+        {
+          "codigo": "202010520",
+          "nome": "DOSAGEM DE ISOMERASE-FOSFOHEXOSE"
+        },
+        {
+          "codigo": "202010538",
+          "nome": "DOSAGEM DE LACTATO"
+        },
+        {
+          "codigo": "202010546",
+          "nome": "DOSAGEM DE LEUCINO-AMINOPEPTIDASE"
+        },
+        {
+          "codigo": "202010554",
+          "nome": "DOSAGEM DE LIPASE"
+        },
+        {
+          "codigo": "202070255",
+          "nome": "DOSAGEM DE LITIO"
+        },
+        {
+          "codigo": "202010562",
+          "nome": "DOSAGEM DE MAGNESIO"
+        },
+        {
+          "codigo": "202070263",
+          "nome": "DOSAGEM DE MERCURIO"
+        },
+        {
+          "codigo": "202070280",
+          "nome": "DOSAGEM DE METABOLITOS DA COCAINA"
+        },
+        {
+          "codigo": "202070271",
+          "nome": "DOSAGEM DE META-HEMOGLOBINA"
+        },
+        {
+          "codigo": "202070298",
+          "nome": "DOSAGEM DE METOTREXATO"
+        },
+        {
+          "codigo": "202050092",
+          "nome": "DOSAGEM DE MICROALBUMINA NA URINA"
+        },
+        {
+          "codigo": "202010570",
+          "nome": "DOSAGEM DE MUCO-PROTEINAS"
+        },
+        {
+          "codigo": "202050106",
+          "nome": "DOSAGEM DE OXALATO"
+        },
+        {
+          "codigo": "202060276",
+          "nome": "DOSAGEM DE PARATORMONIO"
+        },
+        {
+          "codigo": "202060284",
+          "nome": "DOSAGEM DE PEPTIDEO C"
+        },
+        {
+          "codigo": "202010589",
+          "nome": "DOSAGEM DE PIRUVATO"
+        },
+        {
+          "codigo": "202020347",
+          "nome": "DOSAGEM DE PLASMINOGENIO"
+        },
+        {
+          "codigo": "202010597",
+          "nome": "DOSAGEM DE PORFIRINAS"
+        },
+        {
+          "codigo": "202010600",
+          "nome": "DOSAGEM DE POTASSIO"
+        },
+        {
+          "codigo": "202060292",
+          "nome": "DOSAGEM DE PROGESTERONA"
+        },
+        {
+          "codigo": "202060306",
+          "nome": "DOSAGEM DE PROLACTINA"
+        },
+        {
+          "codigo": "202030202",
+          "nome": "DOSAGEM DE PROTEINA C REATIVA"
+        },
+        {
+          "codigo": "202050114",
+          "nome": "DOSAGEM DE PROTEINAS (URINA DE 24 HORAS)"
+        },
+        {
+          "codigo": "202090132",
+          "nome": "DOSAGEM DE PROTEINAS NO LIQUIDO SINOVIAL E DERRAMES"
+        },
+        {
+          "codigo": "202010619",
+          "nome": "DOSAGEM DE PROTEINAS TOTAIS"
+        },
+        {
+          "codigo": "202010627",
+          "nome": "DOSAGEM DE PROTEINAS TOTAIS E FRACOES"
+        },
+        {
+          "codigo": "202070301",
+          "nome": "DOSAGEM DE QUINIDINA"
+        },
+        {
+          "codigo": "202060314",
+          "nome": "DOSAGEM DE RENINA"
+        },
+        {
+          "codigo": "202070310",
+          "nome": "DOSAGEM DE SALICILATOS"
+        },
+        {
+          "codigo": "202010635",
+          "nome": "DOSAGEM DE SODIO"
+        },
+        {
+          "codigo": "202090140",
+          "nome": "DOSAGEM DE SODIO E CLORO NO SUOR (C/ COLETA)"
+        },
+        {
+          "codigo": "202060322",
+          "nome": "DOSAGEM DE SOMATOMEDINA C (IGF1)"
+        },
+        {
+          "codigo": "202060330",
+          "nome": "DOSAGEM DE SULFATO DE HIDROEPIANDROSTERONA (DHEAS)"
+        },
+        {
+          "codigo": "202070328",
+          "nome": "DOSAGEM DE SULFATOS"
+        },
+        {
+          "codigo": "202070336",
+          "nome": "DOSAGEM DE TEOFILINA"
+        },
+        {
+          "codigo": "202060349",
+          "nome": "DOSAGEM DE TESTOSTERONA"
+        },
+        {
+          "codigo": "202060357",
+          "nome": "DOSAGEM DE TESTOSTERONA LIVRE"
+        },
+        {
+          "codigo": "202070344",
+          "nome": "DOSAGEM DE TIOCIANATO"
+        },
+        {
+          "codigo": "202060365",
+          "nome": "DOSAGEM DE TIREOGLOBULINA"
+        },
+        {
+          "codigo": "202060373",
+          "nome": "DOSAGEM DE TIROXINA (T4)"
+        },
+        {
+          "codigo": "202060381",
+          "nome": "DOSAGEM DE TIROXINA LIVRE (T4 LIVRE)"
+        },
+        {
+          "codigo": "202010643",
+          "nome": "DOSAGEM DE TRANSAMINASE GLUTAMICO-OXALACETICA (TGO)"
+        },
+        {
+          "codigo": "202010651",
+          "nome": "DOSAGEM DE TRANSAMINASE GLUTAMICO-PIRUVICA (TGP)"
+        },
+        {
+          "codigo": "202010660",
+          "nome": "DOSAGEM DE TRANSFERRINA"
+        },
+        {
+          "codigo": "202010678",
+          "nome": "DOSAGEM DE TRIGLICERIDEOS"
+        },
+        {
+          "codigo": "202060390",
+          "nome": "DOSAGEM DE TRIIODOTIRONINA (T3)"
+        },
+        {
+          "codigo": "202110079",
+          "nome": "DOSAGEM DE TRIPSINA IMUNORREATIVA"
+        },
+        {
+          "codigo": "202010686",
+          "nome": "DOSAGEM DE TRIPTOFANO"
+        },
+        {
+          "codigo": "202031209",
+          "nome": "DOSAGEM DE TROPONINA"
+        },
+        {
+          "codigo": "202110087",
+          "nome": "DOSAGEM DE TSH E T4 LIVRE (CONTROLE / DIAGNOSTICO TARDIO)"
+        },
+        {
+          "codigo": "202010694",
+          "nome": "DOSAGEM DE UREIA"
+        },
+        {
+          "codigo": "202010708",
+          "nome": "DOSAGEM DE VITAMINA B12"
+        },
+        {
+          "codigo": "202070352",
+          "nome": "DOSAGEM DE ZINCO"
+        },
+        {
+          "codigo": "202031217",
+          "nome": "DOSAGEM DO ANTÍGENO CA 125"
+        },
+        {
+          "codigo": "202050122",
+          "nome": "DOSAGEM E/OU FRACIONAMENTO DE ACIDOS ORGANICOS"
+        },
+        {
+          "codigo": "202110117",
+          "nome": "DOSAGEM QUANTITATIVA DA ATIVIDADE DA BIOTINIDASE EM AMOSTRAS DE SORO"
+        },
+        {
+          "codigo": "202020355",
+          "nome": "ELETROFORESE DE HEMOGLOBINA"
+        },
+        {
+          "codigo": "202010716",
+          "nome": "ELETROFORESE DE LIPOPROTEINAS"
+        },
+        {
+          "codigo": "202010724",
+          "nome": "ELETROFORESE DE PROTEINAS"
+        },
+        {
+          "codigo": "202090159",
+          "nome": "ELETROFORESE DE PROTEINAS C/ CONCENTRACAO NO LIQUOR"
+        },
+        {
+          "codigo": "202020363",
+          "nome": "ERITROGRAMA (ERITROCITOS, HEMOGLOBINA, HEMATOCRITO)"
+        },
+        {
+          "codigo": "202090167",
+          "nome": "ESPECTROFOTOMETRIA NO LIQUIDO AMNIOTICO"
+        },
+        {
+          "codigo": "202090175",
+          "nome": "ESPLENOGRAMA"
+        },
+        {
+          "codigo": "202040038",
+          "nome": "EXAME COPROLOGICO FUNCIONAL"
+        },
+        {
+          "codigo": "202090183",
+          "nome": "EXAME DE CARACTERES FISICOS CONTAGEM GLOBAL E ESPECIFICA DE CELULAS"
+        },
+        {
+          "codigo": "202080145",
+          "nome": "EXAME MICROBIOLOGICO A FRESCO (DIRETO)"
+        },
+        {
+          "codigo": "202050130",
+          "nome": "EXAME QUALITATIVO DE CALCULOS URINARIOS"
+        },
+        {
+          "codigo": "202120031",
+          "nome": "FENOTIPAGEM DE SISTEMA RH - HR"
+        },
+        {
+          "codigo": "202010732",
+          "nome": "GASOMETRIA (PH PCO2 PO2 BICARBONATO AS2 (EXCETO BASE )"
+        },
+        {
+          "codigo": "202030210",
+          "nome": "GENOTIPAGEM DE VIRUS DA HEPATITE C"
+        },
+        {
+          "codigo": "202020371",
+          "nome": "HEMATOCRITO"
+        },
+        {
+          "codigo": "202080153",
+          "nome": "HEMOCULTURA"
+        },
+        {
+          "codigo": "202020380",
+          "nome": "HEMOGRAMA COMPLETO"
+        },
+        {
+          "codigo": "202080161",
+          "nome": "IDENTIFICACAO AUTOMATIZADA DE MICROORGANISMOS"
+        },
+        {
+          "codigo": "202120040",
+          "nome": "IDENTIFICACAO DE ANTICORPOS SERICOS IRREGULARES C/ PAINEL DE HEMACIAS"
+        },
+        {
+          "codigo": "202040046",
+          "nome": "IDENTIFICACAO DE FRAGMENTOS DE HELMINTOS"
+        },
+        {
+          "codigo": "202030229",
+          "nome": "IMUNOELETROFORESE DE PROTEINAS"
+        },
+        {
+          "codigo": "202030237",
+          "nome": "IMUNOFENOTIPAGEM DE HEMOPATIAS MALIGNAS (POR MARCADOR)"
+        },
+        {
+          "codigo": "202030245",
+          "nome": "INTADERMORREACAO COM DERIVADO PROTEICO PURIFICADO (PPD)"
+        },
+        {
+          "codigo": "202020398",
+          "nome": "LEUCOGRAMA"
+        },
+        {
+          "codigo": "202090191",
+          "nome": "MIELOGRAMA"
+        },
+        {
+          "codigo": "202080170",
+          "nome": "PEQUISA DE PNEUMOCYSTI CARINI"
+        },
+        {
+          "codigo": "202050149",
+          "nome": "PESQUISA / DOSAGEM DE AMINOACIDOS (POR CROMATOGRAFIA)"
+        },
+        {
+          "codigo": "202050157",
+          "nome": "PESQUISA DE ALCAPTONA NA URINA"
+        },
+        {
+          "codigo": "202050165",
+          "nome": "PESQUISA DE AMINOACIDOS NA URINA"
+        },
+        {
+          "codigo": "202030253",
+          "nome": "PESQUISA DE ANTICORPO IGG ANTICARDIOLIPINA"
+        },
+        {
+          "codigo": "202030261",
+          "nome": "PESQUISA DE ANTICORPO IGM ANTICARDIOLIPINA"
+        },
+        {
+          "codigo": "202030377",
+          "nome": "PESQUISA DE ANTICORPOS ANTIADENOVIRUS"
+        },
+        {
+          "codigo": "202030385",
+          "nome": "PESQUISA DE ANTICORPOS ANTIAMEBAS"
+        },
+        {
+          "codigo": "202030393",
+          "nome": "PESQUISA DE ANTICORPOS ANTIASPERGILLUS"
+        },
+        {
+          "codigo": "202030407",
+          "nome": "PESQUISA DE ANTICORPOS ANTIBRUCELAS"
+        },
+        {
+          "codigo": "202030415",
+          "nome": "PESQUISA DE ANTICORPOS ANTICISTICERCO"
+        },
+        {
+          "codigo": "202030423",
+          "nome": "PESQUISA DE ANTICORPOS ANTICLAMIDIA (POR IMUNOFLUORESCENCIA)"
+        },
+        {
+          "codigo": "202030431",
+          "nome": "PESQUISA DE ANTICORPOS ANTICORTEX SUPRARENAL"
+        },
+        {
+          "codigo": "202030270",
+          "nome": "PESQUISA DE ANTICORPOS ANTI-DNA"
+        },
+        {
+          "codigo": "202030440",
+          "nome": "PESQUISA DE ANTICORPOS ANTIEQUINOCOCOS"
+        },
+        {
+          "codigo": "202030458",
+          "nome": "PESQUISA DE ANTICORPOS ANTIESCLERODERMA (SCL 70)"
+        },
+        {
+          "codigo": "202030466",
+          "nome": "PESQUISA DE ANTICORPOS ANTIESPERMATOZOIDES"
+        },
+        {
+          "codigo": "202090213",
+          "nome": "PESQUISA DE ANTICORPOS ANTIESPERMATOZOIDES ( ELISA )"
+        },
+        {
+          "codigo": "202030474",
+          "nome": "PESQUISA DE ANTICORPOS ANTIESTREPTOLISINA O (ASLO)"
+        },
+        {
+          "codigo": "202030482",
+          "nome": "PESQUISA DE ANTICORPOS ANTIFIGADO"
+        },
+        {
+          "codigo": "202030504",
+          "nome": "PESQUISA DE ANTICORPOS ANTIGLOMERULO"
+        },
+        {
+          "codigo": "202030288",
+          "nome": "PESQUISA DE ANTICORPOS ANTI-HELICOBACTER PYLORI"
+        },
+        {
+          "codigo": "202030296",
+          "nome": "PESQUISA DE ANTICORPOS ANTI-HIV-1 (WESTERN BLOT)"
+        },
+        {
+          "codigo": "202030300",
+          "nome": "PESQUISA DE ANTICORPOS ANTI-HIV-1 + HIV-2 (ELISA)"
+        },
+        {
+          "codigo": "202030318",
+          "nome": "PESQUISA DE ANTICORPOS ANTI-HTLV-1 + HTLV-2"
+        },
+        {
+          "codigo": "202030512",
+          "nome": "PESQUISA DE ANTICORPOS ANTIILHOTA DE LANGERHANS"
+        },
+        {
+          "codigo": "202030520",
+          "nome": "PESQUISA DE ANTICORPOS ANTIINSULINA"
+        },
+        {
+          "codigo": "202030539",
+          "nome": "PESQUISA DE ANTICORPOS ANTILEPTOSPIRAS"
+        },
+        {
+          "codigo": "202030547",
+          "nome": "PESQUISA DE ANTICORPOS ANTILISTERIA"
+        },
+        {
+          "codigo": "202030555",
+          "nome": "PESQUISA DE ANTICORPOS ANTIMICROSSOMAS"
+        },
+        {
+          "codigo": "202030563",
+          "nome": "PESQUISA DE ANTICORPOS ANTIMITOCONDRIA"
+        },
+        {
+          "codigo": "202030571",
+          "nome": "PESQUISA DE ANTICORPOS ANTIMUSCULO ESTRIADO"
+        },
+        {
+          "codigo": "202030580",
+          "nome": "PESQUISA DE ANTICORPOS ANTIMUSCULO LISO"
+        },
+        {
+          "codigo": "202030598",
+          "nome": "PESQUISA DE ANTICORPOS ANTINUCLEO"
+        },
+        {
+          "codigo": "202030601",
+          "nome": "PESQUISA DE ANTICORPOS ANTIPARIETAIS"
+        },
+        {
+          "codigo": "202030610",
+          "nome": "PESQUISA DE ANTICORPOS ANTIPLASMODIOS"
+        },
+        {
+          "codigo": "202030326",
+          "nome": "PESQUISA DE ANTICORPOS ANTI-RIBONUCLEOPROTEINA (RNP)"
+        },
+        {
+          "codigo": "202030334",
+          "nome": "PESQUISA DE ANTICORPOS ANTI-SCHISTOSOMAS"
+        },
+        {
+          "codigo": "202030342",
+          "nome": "PESQUISA DE ANTICORPOS ANTI-SM"
+        },
+        {
+          "codigo": "202030350",
+          "nome": "PESQUISA DE ANTICORPOS ANTI-SS-A (RO)"
+        },
+        {
+          "codigo": "202030369",
+          "nome": "PESQUISA DE ANTICORPOS ANTI-SS-B (LA)"
+        },
+        {
+          "codigo": "202030628",
+          "nome": "PESQUISA DE ANTICORPOS ANTITIREOGLOBULINA"
+        },
+        {
+          "codigo": "202030636",
+          "nome": "PESQUISA DE ANTICORPOS CONTRA ANTIGENO DE SUPERFICIE DO VIRUS DA HEPATITE B (ANTI-HBS)"
+        },
+        {
+          "codigo": "202030644",
+          "nome": "PESQUISA DE ANTICORPOS CONTRA ANTIGENO E DO VIRUS DA HEPATITE B (ANTI-HBE)"
+        },
+        {
+          "codigo": "202030652",
+          "nome": "PESQUISA DE ANTICORPOS CONTRA HISTOPLASMA"
+        },
+        {
+          "codigo": "202030660",
+          "nome": "PESQUISA DE ANTICORPOS CONTRA O SPOROTRIX SCHENKII"
+        },
+        {
+          "codigo": "202030679",
+          "nome": "PESQUISA DE ANTICORPOS CONTRA O VIRUS DA HEPATITE C (ANTI-HCV)"
+        },
+        {
+          "codigo": "202030687",
+          "nome": "PESQUISA DE ANTICORPOS CONTRA O VIRUS DA HEPATITE D (ANTI-HDV)"
+        },
+        {
+          "codigo": "202030695",
+          "nome": "PESQUISA DE ANTICORPOS CONTRA O VIRUS DO SARAMPO"
+        },
+        {
+          "codigo": "202030709",
+          "nome": "PESQUISA DE ANTICORPOS CONTRA PARACOCCIDIOIDES BRASILIENSIS"
+        },
+        {
+          "codigo": "202030717",
+          "nome": "PESQUISA DE ANTICORPOS E/OU ANTIGENO DO VIRUS SINCICIAL RESPIRATORIO"
+        },
+        {
+          "codigo": "202030725",
+          "nome": "PESQUISA DE ANTICORPOS EIE ANTICLAMIDIA"
+        },
+        {
+          "codigo": "202030733",
+          "nome": "PESQUISA DE ANTICORPOS HETEROFILOS CONTA O VIRUS EPSTEIN-BARR"
+        },
+        {
+          "codigo": "202030741",
+          "nome": "PESQUISA DE ANTICORPOS IGG ANTICITOMEGALOVIRUS"
+        },
+        {
+          "codigo": "202030750",
+          "nome": "PESQUISA DE ANTICORPOS IGG ANTILEISHMANIAS"
+        },
+        {
+          "codigo": "202030768",
+          "nome": "PESQUISA DE ANTICORPOS IGG ANTITOXOPLASMA"
+        },
+        {
+          "codigo": "202030776",
+          "nome": "PESQUISA DE ANTICORPOS IGG ANTITRYPANOSOMA CRUZI"
+        },
+        {
+          "codigo": "202030784",
+          "nome": "PESQUISA DE ANTICORPOS IGG CONTRA ANTIGENO CENTRAL DO VIRUS DA HEPATITE B (ANTI-HBC-IGG)"
+        },
+        {
+          "codigo": "202030792",
+          "nome": "PESQUISA DE ANTICORPOS IGG CONTRA ARBOVIRUS (DENGUE E FEBRE AMARELA)"
+        },
+        {
+          "codigo": "202030806",
+          "nome": "PESQUISA DE ANTICORPOS IGG CONTRA O VIRUS DA HEPATITE A (HAV-IGG)"
+        },
+        {
+          "codigo": "202030814",
+          "nome": "PESQUISA DE ANTICORPOS IGG CONTRA O VIRUS DA RUBEOLA"
+        },
+        {
+          "codigo": "202030822",
+          "nome": "PESQUISA DE ANTICORPOS IGG CONTRA O VIRUS DA VARICELA- HERPES ZOSTER"
+        },
+        {
+          "codigo": "202030830",
+          "nome": "PESQUISA DE ANTICORPOS IGG CONTRA O VIRUS EPSTEIN- BARR"
+        },
+        {
+          "codigo": "202030849",
+          "nome": "PESQUISA DE ANTICORPOS IGG CONTRA O VIRUS HERPES SIMPLES"
+        },
+        {
+          "codigo": "202030857",
+          "nome": "PESQUISA DE ANTICORPOS IGM ANTICITOMEGALOVIRUS"
+        },
+        {
+          "codigo": "202030865",
+          "nome": "PESQUISA DE ANTICORPOS IGM ANTILEISHMANIAS"
+        },
+        {
+          "codigo": "202030873",
+          "nome": "PESQUISA DE ANTICORPOS IGM ANTITOXOPLASMA"
+        },
+        {
+          "codigo": "202030881",
+          "nome": "PESQUISA DE ANTICORPOS IGM ANTITRYPANOSOMA CRUZI"
+        },
+        {
+          "codigo": "202030890",
+          "nome": "PESQUISA DE ANTICORPOS IGM CONTRA ANTIGENO CENTRAL DO VIRUS DA HEPATITE B (ANTI-HBC-IGM)"
+        },
+        {
+          "codigo": "202030903",
+          "nome": "PESQUISA DE ANTICORPOS IGM CONTRA ARBOVIRUS (DENGUE E FEBRE AMARELA)"
+        },
+        {
+          "codigo": "202030911",
+          "nome": "PESQUISA DE ANTICORPOS IGM CONTRA O VIRUS DA HEPATITE A (HAV-IGG)"
+        },
+        {
+          "codigo": "202030920",
+          "nome": "PESQUISA DE ANTICORPOS IGM CONTRA O VIRUS DA RUBEOLA"
+        },
+        {
+          "codigo": "202030938",
+          "nome": "PESQUISA DE ANTICORPOS IGM CONTRA O VIRUS DA VARICELA- HERPES ZOSTER"
+        },
+        {
+          "codigo": "202030946",
+          "nome": "PESQUISA DE ANTICORPOS IGM CONTRA O VIRUS EPSTEIN- BARR"
+        },
+        {
+          "codigo": "202030954",
+          "nome": "PESQUISA DE ANTICORPOS IGM CONTRA O VIRUS HERPES SIMPLES"
+        },
+        {
+          "codigo": "202120058",
+          "nome": "PESQUISA DE ANTICORPOS IRREGULARES PELO METODO DA ELUICAO"
+        },
+        {
+          "codigo": "202120066",
+          "nome": "PESQUISA DE ANTICORPOS SERICOS IRREGULARES 37OC"
+        },
+        {
+          "codigo": "202120074",
+          "nome": "PESQUISA DE ANTICORPOS SERICOS IRREGULARES A FRIO"
+        },
+        {
+          "codigo": "202030962",
+          "nome": "PESQUISA DE ANTIGENO CARCINOEMBRIONARIO (CEA)"
+        },
+        {
+          "codigo": "202030970",
+          "nome": "PESQUISA DE ANTIGENO DE SUPERFICIE DO VIRUS DA HEPATITE B (HBSAG)"
+        },
+        {
+          "codigo": "202030989",
+          "nome": "PESQUISA DE ANTIGENO E DO VIRUS DA HEPATITE B (HBEAG)"
+        },
+        {
+          "codigo": "202020401",
+          "nome": "PESQUISA DE ATIVIDADE DO COFATOR DE RISTOCETINA"
+        },
+        {
+          "codigo": "202080188",
+          "nome": "PESQUISA DE BACILO DIFTERICO"
+        },
+        {
+          "codigo": "202050173",
+          "nome": "PESQUISA DE BETA-MERCAPTO-LACTATO-DISSULFIDURIA"
+        },
+        {
+          "codigo": "202050181",
+          "nome": "PESQUISA DE CADEIAS LEVES KAPPA E LAMBDA"
+        },
+        {
+          "codigo": "202090230",
+          "nome": "PESQUISA DE CARACTERES FISICOS NO LIQUOR"
+        },
+        {
+          "codigo": "202020410",
+          "nome": "PESQUISA DE CELULAS LE"
+        },
+        {
+          "codigo": "202090248",
+          "nome": "PESQUISA DE CELULAS ORANGIOFILAS"
+        },
+        {
+          "codigo": "202050190",
+          "nome": "PESQUISA DE CISTINA NA URINA"
+        },
+        {
+          "codigo": "202030997",
+          "nome": "PESQUISA DE CLAMIDIA (POR CAPTURA HIBRIDA)"
+        },
+        {
+          "codigo": "202050203",
+          "nome": "PESQUISA DE COPROPORFIRINA NA URINA"
+        },
+        {
+          "codigo": "202020428",
+          "nome": "PESQUISA DE CORPUSCULOS DE HEINZ"
+        },
+        {
+          "codigo": "202031004",
+          "nome": "PESQUISA DE CRIOGLOBULINAS"
+        },
+        {
+          "codigo": "202090256",
+          "nome": "PESQUISA DE CRISTAIS C/ LUZ POLARIZADA"
+        },
+        {
+          "codigo": "202040054",
+          "nome": "PESQUISA DE ENTEROBIUS VERMICULARES (OXIURUS OXIURA)"
+        },
+        {
+          "codigo": "202040062",
+          "nome": "PESQUISA DE EOSINOFILOS"
+        },
+        {
+          "codigo": "202050211",
+          "nome": "PESQUISA DE ERROS INATOS DO METABOLISMO NA URINA"
+        },
+        {
+          "codigo": "202090264",
+          "nome": "PESQUISA DE ESPERMATOZOIDES (APOS VASECTOMIA)"
+        },
+        {
+          "codigo": "202080196",
+          "nome": "PESQUISA DE ESTREPTOCOCOS BETA-HEMOLITICOS DO GRUPO A"
+        },
+        {
+          "codigo": "202031012",
+          "nome": "PESQUISA DE FATOR REUMATOIDE (WAALER-ROSE)"
+        },
+        {
+          "codigo": "202120082",
+          "nome": "PESQUISA DE FATOR RH (INCLUI D FRACO)"
+        },
+        {
+          "codigo": "202050220",
+          "nome": "PESQUISA DE FENIL-CETONA NA URINA"
+        },
+        {
+          "codigo": "202020436",
+          "nome": "PESQUISA DE FILARIA"
+        },
+        {
+          "codigo": "202050238",
+          "nome": "PESQUISA DE FRUTOSE NA URINA"
+        },
+        {
+          "codigo": "202050246",
+          "nome": "PESQUISA DE GALACTOSE NA URINA"
+        },
+        {
+          "codigo": "202050254",
+          "nome": "PESQUISA DE GONADOTROFINA CORIONICA"
+        },
+        {
+          "codigo": "202040070",
+          "nome": "PESQUISA DE GORDURA FECAL"
+        },
+        {
+          "codigo": "202080200",
+          "nome": "PESQUISA DE HAEMOPHILUS DUCREY"
+        },
+        {
+          "codigo": "202080218",
+          "nome": "PESQUISA DE HELICOBACTER PYLORI"
+        },
+        {
+          "codigo": "202020444",
+          "nome": "PESQUISA DE HEMOGLOBINA S"
+        },
+        {
+          "codigo": "202031020",
+          "nome": "PESQUISA DE HIV-1 POR IMUNOFLUORESCENCIA"
+        },
+        {
+          "codigo": "202050262",
+          "nome": "PESQUISA DE HOMOCISTINA NA URINA"
+        },
+        {
+          "codigo": "202031039",
+          "nome": "PESQUISA DE IMUNOGLOBULINA E (IGE) ALERGENO-ESPECIFICA"
+        },
+        {
+          "codigo": "202050270",
+          "nome": "PESQUISA DE LACTOSE NA URINA"
+        },
+        {
+          "codigo": "202040089",
+          "nome": "PESQUISA DE LARVAS NAS FEZES"
+        },
+        {
+          "codigo": "202080226",
+          "nome": "PESQUISA DE LEPTOSPIRAS"
+        },
+        {
+          "codigo": "202040097",
+          "nome": "PESQUISA DE LEUCOCITOS NAS FEZES"
+        },
+        {
+          "codigo": "202040100",
+          "nome": "PESQUISA DE LEVEDURAS NAS FEZES"
+        },
+        {
+          "codigo": "202060470",
+          "nome": "PESQUISA DE MACROPROLACTINA"
+        },
+        {
+          "codigo": "202050289",
+          "nome": "PESQUISA DE MUCOPOLISSACARIDEOS NA URINA"
+        },
+        {
+          "codigo": "202040119",
+          "nome": "PESQUISA DE OVOS DE SCHISTOSOMAS (EM FRAGMENTO DE MUCOSA)"
+        },
+        {
+          "codigo": "202040127",
+          "nome": "PESQUISA DE OVOS E CISTOS DE PARASITAS"
+        },
+        {
+          "codigo": "202020452",
+          "nome": "PESQUISA DE PLASMODIO"
+        },
+        {
+          "codigo": "202050297",
+          "nome": "PESQUISA DE PORFOBILINOGENIO NA URINA"
+        },
+        {
+          "codigo": "202050300",
+          "nome": "PESQUISA DE PROTEINAS URINARIAS (POR ELETROFORESE)"
+        },
+        {
+          "codigo": "202090272",
+          "nome": "PESQUISA DE RAGOCITOS NO LIQUIDO SINOVIAL E DERRAMES"
+        },
+        {
+          "codigo": "202040135",
+          "nome": "PESQUISA DE ROTAVIRUS NAS FEZES"
+        },
+        {
+          "codigo": "202040143",
+          "nome": "PESQUISA DE SANGUE OCULTO NAS FEZES"
+        },
+        {
+          "codigo": "202040151",
+          "nome": "PESQUISA DE SUBSTANCIAS REDUTORAS NAS FEZES"
+        },
+        {
+          "codigo": "202050319",
+          "nome": "PESQUISA DE TIROSINA NA URINA"
+        },
+        {
+          "codigo": "202080234",
+          "nome": "PESQUISA DE TREPONEMA PALLIDUM"
+        },
+        {
+          "codigo": "202020460",
+          "nome": "PESQUISA DE TRIPANOSSOMA"
+        },
+        {
+          "codigo": "202040160",
+          "nome": "PESQUISA DE TRIPSINA NAS FEZES"
+        },
+        {
+          "codigo": "202040178",
+          "nome": "PESQUISA DE TROFOZOITAS NAS FEZES"
+        },
+        {
+          "codigo": "202031047",
+          "nome": "PESQUISA DE TRYPANOSOMA CRUZI (POR IMUNOFLUORESCENCIA)"
+        },
+        {
+          "codigo": "202010740",
+          "nome": "PROVA DA D-XILOSE"
+        },
+        {
+          "codigo": "202020479",
+          "nome": "PROVA DE COMPATIBILIDADE PRE-TRANSFUSIONAL (MEIOS SALINOS, ALBUMINOSO E COOMBS)"
+        },
+        {
+          "codigo": "202020487",
+          "nome": "PROVA DE CONSUMO DE PROTROMBINA"
+        },
+        {
+          "codigo": "202050327",
+          "nome": "PROVA DE DILUICAO (URINA)"
+        },
+        {
+          "codigo": "202090280",
+          "nome": "PROVA DE PROGRESSAO ESPERMATICA (CADA)"
+        },
+        {
+          "codigo": "202020495",
+          "nome": "PROVA DE RETRACAO DO COAGULO"
+        },
+        {
+          "codigo": "202020509",
+          "nome": "PROVA DO LACO"
+        },
+        {
+          "codigo": "202090299",
+          "nome": "PROVA DO LATEX P/ HAEMO. INFL., STREPTOCOCCUS PNEUMONIAE, NEISSERIA MENINGITIDIS (SOROTIPOS A, B,"
+        },
+        {
+          "codigo": "202090302",
+          "nome": "PROVA DO LATEX P/ PESQUISA DO FATOR REUMATOIDE"
+        },
+        {
+          "codigo": "202031055",
+          "nome": "PROVAS DE PRAUSNITZ-KUSTNER (PK)"
+        },
+        {
+          "codigo": "202031063",
+          "nome": "PROVAS IMUNO-ALERGICAS BACTERIANAS"
+        },
+        {
+          "codigo": "202031071",
+          "nome": "QUANTIFICACAO DE RNA DO HIV-1"
+        },
+        {
+          "codigo": "202031080",
+          "nome": "QUANTIFICACAO DE RNA DO VIRUS DA HEPATITE C"
+        },
+        {
+          "codigo": "202100049",
+          "nome": "QUANTIFICAÇÃO/AMPLIFICAÇÃO DO HER-2"
+        },
+        {
+          "codigo": "202020517",
+          "nome": "RASTREIO P/ DEFICIENCIA DE ENZIMAS ERITROCITARIAS"
+        },
+        {
+          "codigo": "202031098",
+          "nome": "REACAO DE HEMAGLUTINACAO (TPHA) P/ DIAGNOSTICO DA SIFILIS"
+        },
+        {
+          "codigo": "202031101",
+          "nome": "REACAO DE MONTENEGRO ID"
+        },
+        {
+          "codigo": "202090310",
+          "nome": "REACAO DE PANDY"
+        },
+        {
+          "codigo": "202090329",
+          "nome": "REACAO DE RIVALTA NO LIQUIDO SINOVIAL E DERRAMES"
+        },
+        {
+          "codigo": "202020525",
+          "nome": "TESTE DE AGREGACAO DE PLAQUETAS"
+        },
+        {
+          "codigo": "202090337",
+          "nome": "TESTE DE CLEMENTS"
+        },
+        {
+          "codigo": "202060403",
+          "nome": "TESTE DE ESTIMULO DA PROLACTINA / TSH APOS TRH"
+        },
+        {
+          "codigo": "202060411",
+          "nome": "TESTE DE ESTIMULO DA PROLACTINA APOS CLORPROMAZINA"
+        },
+        {
+          "codigo": "202060420",
+          "nome": "TESTE DE ESTIMULO DE LH E FSH APOS GONADORRELINA"
+        },
+        {
+          "codigo": "202060438",
+          "nome": "TESTE DE ESTIMULO DO HGH APOS GLUCAGON"
+        },
+        {
+          "codigo": "202090345",
+          "nome": "TESTE DE GASTROACIDOGRAMA - SECRECAO BASAL POR 60 EM 4 AMOSTRAS"
+        },
+        {
+          "codigo": "202020533",
+          "nome": "TESTE DE HAM (HEMOLISE ACIDA)"
+        },
+        {
+          "codigo": "202090353",
+          "nome": "TESTE DE HOLLANDER NO SUCO GASTRICO"
+        },
+        {
+          "codigo": "202060446",
+          "nome": "TESTE DE SUPRESSAO DO CORTISOL APOS DEXAMETASONA"
+        },
+        {
+          "codigo": "202060454",
+          "nome": "TESTE DE SUPRESSAO DO HGH APOS GLICOSE"
+        },
+        {
+          "codigo": "202010759",
+          "nome": "TESTE DE TOLERANCIA A INSULINA / HIPOGLICEMIANTES ORAIS"
+        },
+        {
+          "codigo": "202031110",
+          "nome": "TESTE DE VDRL P/ DETECÇÃO DE SIFILIS"
+        },
+        {
+          "codigo": "202020541",
+          "nome": "TESTE DIRETO DE ANTIGLOBULINA HUMANA (TAD)"
+        },
+        {
+          "codigo": "202031128",
+          "nome": "TESTE FTA-ABS IGG P/ DIAGNOSTICO DA SIFILIS"
+        },
+        {
+          "codigo": "202031136",
+          "nome": "TESTE FTA-ABS IGM P/ DIAGNOSTICO DA SIFILIS"
+        },
+        {
+          "codigo": "202120090",
+          "nome": "TESTE INDIRETO DE ANTIGLOBULINA HUMANA (TIA)"
+        },
+        {
+          "codigo": "202060462",
+          "nome": "TESTE P/ INVESTIGACAO DO DIABETES INSIPIDUS"
+        },
+        {
+          "codigo": "202031144",
+          "nome": "TESTES ALERGICOS DE CONTATO"
+        },
+        {
+          "codigo": "202031152",
+          "nome": "TESTES CUTANEOS DE LEITURA IMEDIATA"
+        },
+        {
+          "codigo": "202120104",
+          "nome": "TITULACAO DE ANTICORPOS ANTI A E/OU ANTI B"
+        },
+        {
+          "codigo": "202031179",
+          "nome": "VDRL P/ DETECCAO DE SIFILIS EM GESTANTE"
+        }
+      ];
+        let searchMode = 'nome'; // 'nome' ou 'codigo'
+
+        // Configurar abas de busca
+        const tabNome = document.getElementById('tab-nome');
+        const tabCodigo = document.getElementById('tab-codigo');
+        
+        tabNome.addEventListener('click', function() {
+            searchMode = 'nome';
+            tabNome.classList.add('active');
+            tabCodigo.classList.remove('active');
+            document.getElementById('search').placeholder = 'Digite para buscar por nome do procedimento (mínimo 3 caracteres)...';
+            document.getElementById('search').value = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('count').innerHTML = '';
+        });
+        
+        tabCodigo.addEventListener('click', function() {
+            searchMode = 'codigo';
+            tabCodigo.classList.add('active');
+            tabNome.classList.remove('active');
+            document.getElementById('search').placeholder = 'Digite para buscar por código do procedimento...';
+            document.getElementById('search').value = '';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('count').innerHTML = '';
+        });
+
+        // Função para destacar o texto da busca nos resultados
+        function highlightText(text, query) {
+            if (!query) return text;
+            
+            const regex = new RegExp(query, 'gi');
+            return text.replace(regex, match => `<span class="highlight">${match}</span>`);
+        }
+        
+        // Função para copiar o código para a área de transferência
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert(`Código ${text} copiado para a área de transferência!`);
+            }).catch(err => {
+                console.error('Erro ao copiar: ', err);
+            });
+        }
+
+        // Configurar a busca
+        const searchInput = document.getElementById('search');
+        const resultsDiv = document.getElementById('results');
+        const countDiv = document.getElementById('count');
+        
+        searchInput.addEventListener('input', function() {
+            const query = this.value.toUpperCase();
+            
+            if ((searchMode === 'nome' && query.length < 3) || query.length === 0) {
+                resultsDiv.innerHTML = '';
+                countDiv.innerHTML = '';
+                return;
+            }
+            
+            // Buscar procedimentos
+            let results = [];
+            
+            if (searchMode === 'nome') {
+                results = procedimentos.filter(p => p.nome.toUpperCase().includes(query));
+            } else {
+                results = procedimentos.filter(p => p.codigo.includes(query));
+            }
+            
+            // Mostrar contagem de resultados
+            countDiv.innerHTML = `${results.length} procedimento(s) encontrado(s)`;
+            
+            // Mostrar resultados
+            if (results.length > 0) {
+                resultsDiv.innerHTML = results.map(p => {
+                    const highlightedNome = highlightText(p.nome, query);
+                    const highlightedCodigo = searchMode === 'codigo' ? highlightText(p.codigo, query) : p.codigo;
+                    
+                    return `
+                        <div class="result">
+                            <span class="codigo">${highlightedCodigo}</span>
+                            <span class="nome">${highlightedNome}</span>
+                            <button class="copy-button" onclick="copyToClipboard('${p.codigo}')">Copiar código</button>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                resultsDiv.innerHTML = '<p>Nenhum procedimento encontrado</p>';
+            }
+        });
+    </script>
+</body>
+</html> 
